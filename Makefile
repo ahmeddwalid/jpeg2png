@@ -63,11 +63,42 @@ BFLAGS+=-pg
 endif
 
 ifeq ($(WINDOWS),1)
-HOST=i686-w64-mingw32-
-EXE=.exe
-LDFLAGS+=-static -s
-CFLAGS+=-mstackrealign # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48659
-RES+=icon.rc.o
+    # Determine if HOST should be set based on the environment
+    ifeq ($(HOST),)
+        ifeq ($(shell uname -s),Linux)
+            ifeq ($(shell uname -m),x86_64)
+                HOST=x86_64-w64-mingw32-
+            else
+                HOST=i686-w64-mingw32-
+            endif
+        else ifeq ($(shell uname -s),Darwin)
+            ifeq ($(shell uname -m),x86_64)
+                HOST=x86_64-w64-mingw32-
+            else
+                HOST=i686-w64-mingw32-
+            endif
+        else ifeq ($(findstring MINGW,$(shell uname -s)),MINGW)
+            ifeq ($(shell uname -m),x86_64)
+                HOST=x86_64-w64-mingw32-
+            else
+                HOST=i686-w64-mingw32-
+            endif
+        endif
+    endif
+
+    EXE=.exe
+    LDFLAGS+=-static -s
+    CFLAGS+=-mstackrealign # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48659
+    RES+=icon.rc.o
+
+    # Set WINDRES based on environment
+    ifneq ($(findstring MINGW,$(shell uname -s)),)
+        # For MinGW environments, use native windres without HOST prefix
+        WINDRES=windres
+    else
+        # For other environments (Linux, macOS), use HOST-prefixed windres
+        WINDRES=$(HOST)windres
+    endif
 endif
 
 ifeq ($(SAVE_ASM),1)
