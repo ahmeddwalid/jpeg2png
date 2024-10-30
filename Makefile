@@ -133,6 +133,8 @@ ifeq ($(WINDOWS),1)
             WINDRES = $(HOST)windres
         endif
     endif
+else
+    CFLAGS+=-D_POSIX_C_SOURCE=200112
 endif
 
 
