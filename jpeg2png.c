@@ -18,7 +18,7 @@
 #include "progressbar.h"
 #include "fp_exceptions.h"
 
-#define JPEG2PNG_VERSION "1.01"
+#define JPEG2PNG_VERSION "1.02"
 static const float default_weight = 0.3;
 static const float default_pweight = 0.001;
 static const unsigned default_iterations = 50;
