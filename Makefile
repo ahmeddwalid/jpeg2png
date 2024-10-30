@@ -34,6 +34,30 @@ OBJS+=jpeg2png.o utils.o jpeg.o png.o box.o compute.o logger.o progressbar.o fp_
 HOST=
 EXE=
 
+# Detect the environment to set compiler and flags
+ifneq ($(MSYSTEM),)
+    ifeq ($(MSYSTEM),CLANG64)
+        CC = clang
+        BFLAGS += -fopenmp=libomp
+        LIBS += -ljpeg -lpng -lm -lz -lpsapi
+    else ifeq ($(MSYSTEM),CLANG32)
+        CC = clang
+        BFLAGS += -fopenmp=libomp
+        LIBS += -ljpeg -lpng -lm -lz -lpsapi
+    else ifeq ($(MSYSTEM),MINGW64)
+        CC = x86_64-w64-mingw32-gcc
+    else ifeq ($(MSYSTEM),MINGW32)
+        CC = i686-w64-mingw32-gcc
+        WINDRES = windres --target=pe-i386
+    endif
+endif
+
+# Apply specific flags when CC is clang
+ifeq ($(CC),clang)
+    BFLAGS += -fopenmp=libomp
+    LIBS += -ljpeg -lpng -lm -lz -lpsapi
+endif
+
 ifeq ($(BUILTINS),1)
 CFLAGS+=-DBUILTIN_UNREACHABLE -DBUILTIN_ASSUME_ALIGNED -DATTRIBUTE_UNUSED
 endif
@@ -63,7 +87,7 @@ BFLAGS+=-pg
 endif
 
 ifeq ($(WINDOWS),1)
-    # Determine if HOST should be set based on the environment
+    # Set HOST based on environment if not already set
     ifeq ($(HOST),)
         ifeq ($(shell uname -s),Linux)
             ifeq ($(shell uname -m),x86_64)
@@ -88,18 +112,29 @@ ifeq ($(WINDOWS),1)
 
     EXE=.exe
     LDFLAGS+=-static -s
-    CFLAGS+=-mstackrealign # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48659
+    CFLAGS+=-mstackrealign
     RES+=icon.rc.o
 
-    # Set WINDRES based on environment
-    ifneq ($(findstring MINGW,$(shell uname -s)),)
-        # For MinGW environments, use native windres without HOST prefix
-        WINDRES=windres
+    # Set WINDRES based on environment and architecture
+    ifeq ($(MSYSTEM),MINGW32)
+        WINDRES = windres --target=pe-i386
+    else ifeq ($(MSYSTEM),CLANG32)
+        WINDRES = windres --target=pe-i386
+    else ifeq ($(findstring MINGW,$(shell uname -s)),MINGW)
+        ifeq ($(HOST),i686-w64-mingw32-)
+            WINDRES = windres --target=pe-i386
+        else
+            WINDRES = windres
+        endif
     else
-        # For other environments (Linux, macOS), use HOST-prefixed windres
-        WINDRES=$(HOST)windres
+        ifeq ($(HOST),i686-w64-mingw32-)
+            WINDRES = $(HOST)windres --target=pe-i386
+        else
+            WINDRES = $(HOST)windres
+        endif
     endif
 endif
+
 
 ifeq ($(SAVE_ASM),1)
 CFLAGS+=-save-temps -masm=intel -fverbose-asm
