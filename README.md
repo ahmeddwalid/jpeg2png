@@ -35,6 +35,9 @@ You may use ``./jpeg2png`` to execute it without installing, or install using
 
 jpeg2png is licensed GPLv3+.
 
+## How to Compile on Windows
+See instructions here: https://github.com/ThioJoe/jpeg2png/wiki/Compilation-Instructions-(Windows)
+
 ## Usage
 Just execute ``jpeg2png picture.jpg`` to create ``picture.png``. Execute ``jpeg2png --help`` to see all options.
 
